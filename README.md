@@ -1,1 +1,1 @@
-Set up a kubernetes Master-Node kubernetes using kubeadm provisioned with ansible
+Set up a Master-Node kubernetes cluster using kubeadm provisioned with ansible
