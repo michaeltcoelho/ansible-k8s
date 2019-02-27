@@ -1,0 +1,26 @@
+---
+- hosts: master
+  become: yes
+  gather_facts: false
+  tasks:
+    - name: Get join command
+      shell: kubeadm token create --print-join-command
+      register: raw_join_command
+
+    - name: Run join command
+      set_fact:
+        join_command: "{{ raw_join_command.stdout_lines[0] }}"
+
+- hosts: nodes
+  become: yes
+  tasks:
+    - name: Remove joined cache files
+      file:
+        name: node_joined.txt
+        state: absent
+
+    - name: Join to the cluster
+      shell: "{{ hostvars['master'].join_command }} >> node_joined.txt"
+      args:
+        chdir: $HOME
+        creates: node_joined.txt

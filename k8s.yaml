@@ -1,0 +1,42 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install necessary packages
+      apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+        - ca-certificates
+        - software-properties-common
+        - curl
+
+    - name: Add k8s apt key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Add k8s APT repository
+      apt_repository:
+        repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+        filename: kubernetes
+
+    - name: Install k8s packages
+      apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+        - kubeadm
+        - kubelet
+
+- hosts: masters
+  become: yes
+  tasks:
+    - name: Install kubectl
+      apt:
+        name: kubectl
+        state: present
+        force: yes

@@ -1,0 +1,51 @@
+---
+- hosts: masters
+  become: yes
+  vars:
+    pod_network_cidr: "10.244.0.0/16"
+    flannel_url: "https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+
+  tasks:
+    - name: Remove kubeadm cache files
+      file:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - "cluster_reseted.txt"
+        - "cluster_initialized.txt"
+
+    - name: Reset kubeadm components
+      shell: "kubeadm reset --force >> cluster_reseted.txt"
+      args:
+        chdir: $HOME
+        creates: cluster_reseted.txt
+
+    - name: Initalize the cluster
+      shell: kubeadm init --pod-network-cidr={{ pod_network_cidr }} >> cluster_initialized.txt
+      args:
+        chdir: $HOME
+        creates: cluster_initialized.txt
+
+    - name: Create .kube directory
+      become: yes
+      become_user: sysops
+      file:
+        path: $HOME/.kube
+        state: directory
+        mode: 0755
+    
+    - name: Copy admin.conf to user's .kube config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/sysops/.kube/config
+        remote_src: yes
+        owner: sysops
+    
+    - name: Install Pod network
+      become: yes
+      become_user: sysops
+      shell: |
+        kubectl apply -f {{ flannel_url }} >> pod_network_setup.txt
+      args:
+        chdir: $HOME
+        creates: pod_network_setup.txt

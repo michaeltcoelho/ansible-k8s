@@ -1,0 +1,22 @@
+---
+- name: Create non-root user 'sysops'
+  hosts: all
+  become: yes
+  tasks:
+    - name: Create the 'sysops' user
+      user:
+        name: sysops
+        groups:
+          - docker
+          - sudo
+        append: yes
+        state: present
+        createhome: yes
+        shell: /bin/bash
+
+    - name: Allow 'sysops' to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        line: 'sysops ALL=(ALL) NOPASSWD:ALL'
+        validate: 'visudo -cf %s'
+        state: present
